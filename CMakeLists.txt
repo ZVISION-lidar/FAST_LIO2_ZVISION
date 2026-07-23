@@ -5,6 +5,9 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+cmake_policy(SET CMP0074 NEW)
+
+
  ADD_COMPILE_OPTIONS(-std=c++17) 
  set(CMAKE_CXX_FLAGS "-std=c++17 -O3") 
   

@@ -671,6 +671,8 @@ void publish_path(rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath)
     set_posestamp(msg_body_pose);
     msg_body_pose.header.stamp = get_ros_time(lidar_end_time); // ros::Time().fromSec(lidar_end_time);
     msg_body_pose.header.frame_id = "camera_init";
+    path.header.stamp = msg_body_pose.header.stamp;
+
 
     /*** if path is too large, the rvis will crash ***/
     // static int jjj = 0;
