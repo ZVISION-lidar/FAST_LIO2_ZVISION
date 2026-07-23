@@ -23,20 +23,15 @@
             blind: 0.3
 
         mapping:
-            acc_cov: 0.1             # 
+            acc_cov: 0.1              
             gyr_cov: 0.01
-            b_acc_cov: 0.01
-            b_gyr_cov: 0.01
+            b_acc_cov: 0.001
+            b_gyr_cov: 0.001
             fov_degree: 240.0
             det_range: 70.0
             extrinsic_est_en: false
 
-            # 一径NZ 外参
-            # extrinsic_T: [ -0.0026, -0.06545, 0.0161 ]
-            # extrinsic_R: [ -1.,  0.,  0.,
-            #                0.,  0., -1.,
-            #                0., -1.,  0.]
-
+            # 外参
             extrinsic_T: [ -0.0026, -0.06545, 0.0161 ]
             extrinsic_R: [ 1.,  0.,  0.,
                            0.,  1., 0.,
