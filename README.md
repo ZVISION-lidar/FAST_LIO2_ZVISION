@@ -1,73 +1,109 @@
 
-## FAST-LIO
-**FAST-LIO** (Fast LiDAR-Inertial Odometry) is a computationally efficient and robust LiDAR-inertial odometry package. It fuses LiDAR feature points with IMU data using a tightly-coupled iterated extended Kalman filter to allow robust navigation in fast-motion, noisy or cluttered environments where degeneration occurs. Our package address many key issues:
-1. Fast iterated Kalman filter for odometry optimization;
-2. Automaticaly initialized at most steady environments;
-3. Parallel KD-Tree Search to decrease the computation;
+## FAST-LIO_ZVISION_LOCALIZATION-ROS2
+
+FAST-LIO_ZVISION  Relocalization Version with Prior Map 
 
 
-**Related papers**: 
+## 1. Requirements
 
-[FAST-LIO2: Fast Direct LiDAR-inertial Odometry](doc/Fast_LIO_2.pdf)
+### 1.1 Ubuntu  ROS2
 
-[FAST-LIO: A Fast, Robust LiDAR-inertial Odometry Package by Tightly-Coupled Iterated Kalman Filter](https://arxiv.org/abs/2010.08196)
+Recommended environment:
 
+```text
+Ubuntu 22.04
+ROS2 Humble
+```
 
-## Quickly Run with Zvision_1/3/5/5_MT
+### 1.2 System Requirements
 
-**For ROS1 Users**: Please switch to the **ros1** branch and follow the instructions at [ros1 branch](https://github.com/ZVISION-lidar/FAST_LIO_ZVISION/tree/ROS1)
+```bash
+sudo apt install libgoogle-glog-dev libtbb-dev
+sudo apt install libpcl-dev libeigen3-dev
+sudo apt install ros-humble-pcl-ros ros-humble-pcl-conversions
+sudo apt install ros-humble-tf2-ros ros-humble-sensor-msgs-py
+```
 
-## 1. Prerequisites
-### 1.1 **Ubuntu** and **ROS**
-**Ubuntu >= 22.04**
+### 1.3 Python Requirements
 
-The **default from apt** PCL and Eigen is enough for FAST-LIO to work normally.
-
-ROS >= Foxy (Recommend to use ROS-Humble). [ROS Installation](https://docs.ros.org/en/humble/Installation.html)
-
-
-### 1.2. **PCL && Eigen**
-PCL    >= 1.8,   Follow [PCL Installation](https://pointclouds.org/downloads/#linux).
-
-Eigen  >= 3.3.4, Follow [Eigen Installation](http://eigen.tuxfamily.org/index.php?title=Main_Page).
+```bash
+pip3 install --user numpy==1.24.4 scipy==1.10.1 scikit-learn
+pip3 install --user open3d==0.18.0
+```
 
 
 ## 2. Build
 Clone the repository and colcon build:
 
 ```bash
-    cd <ros2_ws>/src # cd into a ros2 workspace folder
-    git clone https://github.com/ZVISION-lidar/FAST_LIO_ZVISION.git --recursive
-    cd ..
-    rosdep install --from-paths src --ignore-src -y
-    colcon build --symlink-install
+cd <ros2_ws>/src # cd into a ros2 workspace folder
+git clone -b relocalization_ros2 https://github.com/ZVISION-lidar/FAST_LIO_ZVISION.git 
+cd ..
+colcon build 
 ```
 
+## 3. Relocalization Run with Prior Map
 
-## 3. Directly run with zvision
-
-### 3.1 Run use ros launch
-
-Launch zvision ros driver.
+### 3.1 ros2 launch Relocalization node 
 
 ```bash
-cd <yourself_zvision_ros_driver_ws>
-source install/setup.bash # use setup.zsh if use zsh
-ros2 launch zvlidar_sdk run.py
+source install/setup.bash
+ros2 launch fast_lio localization_zvision.launch.py map:=/path/to/yourself.pcd
 ```
 
+### 3.2 ros2 launch publish_initial_pose node  to publish an initial pose  (roll pitch yaw : /rad)
 
-Launch fastlio2.
 ```bash
-cd <ros2_ws>
-source install/setup.bash # use setup.zsh if use zsh
-ros2 launch fast_lio mapping_zvision_nz1.launch.py # depend on yourself lidar model: ros2 launch fast_lio mapping_zvision_nz*(1/3/5/5_MT).launch.py 
+source install/setup.bash
+ros2 run fast_lio publish_initial_pose.py x y z roll pitch yaw
+```
+
+or set a "2D Pose Estimate" in rivz
+<div align="left">
+  <img src="doc/fastlio2_rviz2dpose.gif" width="49%">
+  <img src="doc/fastlio2_bash.gif" width="49%">
+</div>
+
+### 3.3 ros2 bag play a ros2bag data or run zvision—sdk
+
+```bash
+ros2 bag play /path/to/bag 
+```
+
+## 4. Important Topics and Frames
+
+Frames:
+
+```text
+map           prior map frame
+camera_init   Fast-LIO local odometry world frame
+body          Fast-LIO body frame
+```
+
+Main topics:
+
+```text
+/map                 prior globle map
+/Odometry            Fast-LIO odomrtry in "camera_init" frame  
+/localization        global localization odomrtry in "map" frame 
+/cur_scan_in_map     current scan visualization in "map" frame
+/path_in_map         path trajectory of /localization
+```
+
+## 5. Key Parameters
+
+Relocalization parameters are in `config/zvision_localization.yaml`：
+
+```text
+min_scan_points_fine                    #default 500
+transform_smoothing_alpha               #default 0.7
+localization.map_voxel_size             #default 0.4
+localization.scan_voxel_size            #default 0.1
+localization.fitness_threshold          #default 0.95
+transform_fusion.publish_frequency      #default 0.5
 ```
 
 
-### 3.2 PCD file save
+## 6. Notes
 
-Enable `pcd_save.pcd_save_en` in the config file and set the `map_file_path` to the path where the map will be saved.
-
-```pcl_viewer scans.pcd``` can visualize the point clouds.
-
+`Not match!!!!` means the current ICP fitness score is lower than `localization.fitness_threshold`, so the new global correction is rejected. The warning prints the candidate transform and score for diagnosis, but it is not automatically applied.

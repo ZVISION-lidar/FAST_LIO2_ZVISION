@@ -882,7 +882,8 @@ public:
 
         RCLCPP_INFO(this->get_logger(), "p_pre->lidar_type %d", p_pre->lidar_type);
 
-        path.header.stamp = this->get_clock()->now();
+        // path.header.stamp = this->get_clock()->now();
+        path.header.stamp = get_ros_time(lidar_end_time);
         path.header.frame_id ="camera_init";
 
         // /*** variables definition ***/

@@ -125,4 +125,12 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(PROGRAMS
+  localization/global_localization.py
+  localization/transform_fusion.py
+  localization/map_publisher.py
+  localization/publish_initial_pose.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_package()

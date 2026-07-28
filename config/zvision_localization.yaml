@@ -1,0 +1,49 @@
+# Generic SLAM Localization Adapter Configuration
+# Modify these to adapt to different SLAM systems
+
+localization:
+    # Voxel sizes for point cloud downsampling
+    map_voxel_size: 0.4
+    scan_voxel_size: 0.1
+
+    # Global localization frequency and ICP threshold
+    frequency: 0.5
+    fitness_threshold: 0.95
+    min_scan_points_fine: 500
+
+    # LiDAR FOV parameters (adjust for different LiDAR)
+    # > pi = panoramic lidar
+    fov: 6.28319
+    fov_far: 150.0
+
+    # Topic names
+    map_topic: "/map"
+    registered_scan_topic: "/cloud_registered"
+    odometry_topic: "/Odometry"
+    initial_pose_topic: "/initialpose"
+    map_to_odom_topic: "/map_to_odom"
+    current_scan_vis_topic: "/cur_scan_in_map"
+    submap_vis_topic: "/submap"
+
+    # Frame names (adjust to match your SLAM system)
+    map_frame: "map"
+    odom_frame: "camera_init"
+    body_frame: "body"
+
+    transform_smoothing: true
+    transform_smoothing_alpha: 0.7
+
+transform_fusion:
+    # TF publishing frequency
+    publish_frequency: 50.0
+
+    # Topic names
+    odometry_topic: "/Odometry"
+    map_to_odom_topic: "/map_to_odom"
+    localization_topic: "/localization"
+    path_in_map_topic: /path_in_map
+
+    # Frame names (adjust to match your SLAM system)
+    map_frame: "map"
+    odom_frame: "camera_init"
+    body_frame: "body"
