@@ -5,12 +5,9 @@
 2. Automaticaly initialized at most steady environments;
 3. Parallel KD-Tree Search to decrease the computation;
 
-
-**Related papers**: 
-
-[FAST-LIO2: Fast Direct LiDAR-inertial Odometry](doc/Fast_LIO_2.pdf)
-
-[FAST-LIO: A Fast, Robust LiDAR-inertial Odometry Package by Tightly-Coupled Iterated Kalman Filter](https://arxiv.org/abs/2010.08196)
+<div align="left">
+  <img src="doc/fastlio2_zvsion_nz5mt_demo.gif" width="95%">
+</div>
 
 
 ## Quickly Run with Zvision_1/3/5/5_MT
@@ -37,10 +34,9 @@ Clone the repository and colcon build:
 
 ```bash
     cd <ros2_ws>/src # cd into a ros2 workspace folder
-    git clone https://github.com/ZVISION-lidar/FAST_LIO_ZVISION.git --recursive
+    git clone https://github.com/ZVISION-lidar/FAST_LIO_ZVISION.git
     cd ..
-    rosdep install --from-paths src --ignore-src -y
-    colcon build --symlink-install
+    colcon build 
 ```
 
 
