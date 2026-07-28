@@ -5,8 +5,8 @@
 2. Automaticaly initialized at most steady environments;
 3. Parallel KD-Tree Search to decrease the computation;
 
-<div align="left">
-  <img src="doc/fastlio2_zvsion_nz5mt_demo.gif" width="95%">
+<div align="center">
+  <img src="doc/fastlio2_zvsion_nz5mt_demo.gif" width="100%">
 </div>
 
 
