@@ -1,9 +1,5 @@
 
-## FAST-LIO
-**FAST-LIO** (Fast LiDAR-Inertial Odometry) is a computationally efficient and robust LiDAR-inertial odometry package. It fuses LiDAR feature points with IMU data using a tightly-coupled iterated extended Kalman filter to allow robust navigation in fast-motion, noisy or cluttered environments where degeneration occurs. Our package address many key issues:
-1. Fast iterated Kalman filter for odometry optimization;
-2. Automaticaly initialized at most steady environments;
-3. Parallel KD-Tree Search to decrease the computation;
+## FAST-LIO2.0
 
 <div align="center">
   <img src="doc/fastlio2_zvsion_nz5mt_demo.gif" width="100%">
