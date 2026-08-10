@@ -8,7 +8,7 @@ FAST-LIO2.0 With ZVISION LIDAR
 </div>
 
 
-## Quickly Run with Zvision_1/3/5/5_MT
+## Quickly Run with Zvision_Series
 
 **For ROS1 Users**: Please switch to the **ros1** branch and follow the instructions at [ros1 branch](https://github.com/ZVISION-lidar/FAST_LIO_ZVISION/tree/ROS1)
 
