@@ -1,27 +1,7 @@
 
 ## FAST-LIO 2.0 
 
-**Pipeline:**
-<div align="center">
-<img src="doc/overview_fastlio2.svg" width=99% />
-</div>
-
-**New Features:**
-1. Incremental mapping using [ikd-Tree](https://github.com/hku-mars/ikd-Tree), achieve faster speed and over 100Hz LiDAR rate.
-2. Direct odometry (scan to map) on Raw LiDAR points (feature extraction can be disabled), achieving better accuracy.
-3. Since no requirements for feature extraction, FAST-LIO2 can support many types of LiDAR including spinning (Velodyne, Ouster) and solid-state (Livox Avia, Horizon, MID-70) LiDARs, and can be easily extended to support more LiDARs.
-4. Support external IMU.
-5. Support ARM-based platforms including Khadas VIM3, Nivida TX2, Raspberry Pi 4B(8G RAM).
-
-**Related papers**: 
-
-[FAST-LIO2: Fast Direct LiDAR-inertial Odometry](doc/Fast_LIO_2.pdf)
-
-[FAST-LIO: A Fast, Robust LiDAR-inertial Odometry Package by Tightly-Coupled Iterated Kalman Filter](https://arxiv.org/abs/2010.08196)
-
-
-
-## Quickly Run with Zvision_1/3/5/5_MT
+## Quickly Run with Zvision_Series
 
 **For ROS2 Users**: Please switch to the **ros2** branch and follow the instructions at [ros2 branch (main) ](https://github.com/ZVISION-lidar/FAST_LIO_ZVISION.git)
 
