@@ -24,7 +24,7 @@ Clone the repository and colcon build:
 
 ```bash
     cd <ros1_ws>/src # cd into a ros1 workspace folder
-    git clone -b ROS1 https://github.com/ZVISION-lidar/FAST_LIO_ZVISION.git
+    git clone -b ROS1 https://github.com/ZVISION-lidar/FAST_LIO2_ZVISION.git
     git pull
     cd ..
     catkin_make
