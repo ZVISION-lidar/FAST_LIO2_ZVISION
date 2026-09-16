@@ -32,7 +32,7 @@ Clone the repository and colcon build:
 
 ```bash
     cd <ros2_ws>/src # cd into a ros2 workspace folder
-    git clone https://github.com/ZVISION-lidar/FAST_LIO_ZVISION.git
+    git clone https://github.com/ZVISION-lidar/FAST_LIO2_ZVISION.git
     cd ..
     colcon build 
 ```
