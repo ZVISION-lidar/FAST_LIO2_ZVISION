@@ -92,12 +92,4 @@ Eigen::Matrix<T,3,1> Log(const Eigen::Matrix<T, 3, 3> &R)
 //         cv::Mat K = (cv::Mat_<T>(3,3) << SKEW_SYM_MATRX(r_ang));
 
 //         /// Roderigous Tranformation
-//         return Eye3 + std::sin(norm) * K + (1.0 - std::cos(norm)) * K * K;
-//     }
-//     else
-//     {
-//         return Eye3;
-//     }
-// }
-
-#endif
+//         return Eye3 + std::sin(norm) * K + (1.0 - std::co

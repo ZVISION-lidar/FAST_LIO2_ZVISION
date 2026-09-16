@@ -332,13 +332,4 @@ public:
     void Add_Point_Boxes(vector<BoxPointType> &BoxPoints);
     void Delete_Points(PointVector &PointToDel);
     int Delete_Point_Boxes(vector<BoxPointType> &BoxPoints);
-    void flatten(KD_TREE_NODE *root, PointVector &Storage, delete_point_storage_set storage_type);
-    void acquire_removed_points(PointVector &removed_points);
-    BoxPointType tree_range();
-    PointVector PCL_Storage;
-    KD_TREE_NODE *Root_Node = nullptr;
-    int max_queue_size = 0;
-};
-
-// template <typename PointType>
-// PointType KD_TREE<PointType>::zeroP = PointType(0,0,0);
+    void flatten(KD_TREE_NODE *root, PointVector &

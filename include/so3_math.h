@@ -101,11 +101,4 @@ Eigen::Matrix<T, 3, 1> RotMtoEuler(const Eigen::Matrix<T, 3, 3> &rot)
     else
     {    
         x = atan2(-rot(1, 2), rot(1, 1));    
-        y = atan2(-rot(2, 0), sy);    
-        z = 0;
-    }
-    Eigen::Matrix<T, 3, 1> ang(x, y, z);
-    return ang;
-}
-
-#endif
+        y = atan2(-rot(2

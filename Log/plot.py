@@ -87,8 +87,4 @@ plt.grid()
 # ax2.set_ylim([0, 100])
 
 # plt.xticks([1,2,3], ('Outdoor Scene', 'Indoor Scene 1', 'Indoor Scene 2'))
-# # # print(time_se)
-# # # print(a_out3[:,2])
-# plt.grid()
-# plt.savefig("time.pdf", dpi=1200)
-plt.show()
+# # # print(time_

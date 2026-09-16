@@ -47,3 +47,4 @@
         pcd_save:
             pcd_save_en: true
             interval: -1
+            leaf_size: 0.0  # 体素滤波尺寸(米)，0表示不滤波，值越大地图点越稀疏

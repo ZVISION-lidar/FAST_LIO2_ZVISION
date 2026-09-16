@@ -94,6 +94,7 @@ double filter_size_corner_min = 0, filter_size_surf_min = 0, filter_size_map_min
 double cube_len = 0, HALF_FOV_COS = 0, FOV_DEG = 0, total_distance = 0, lidar_end_time = 0, first_lidar_time = 0.0;
 int    effct_feat_num = 0, time_log_counter = 0, scan_count = 0, publish_count = 0;
 int    iterCount = 0, feats_down_size = 0, NUM_MAX_ITERATIONS = 0, laserCloudValidNum = 0, pcd_save_interval = -1, pcd_index = 0;
+float pcd_save_leaf_size = 0.0;  // 体素滤波尺寸(米)，0表示不滤波
 bool   point_selected_surf[100000] = {0};
 bool   lidar_pushed, flg_first_scan = true, flg_exit = false, flg_EKF_inited;
 bool   scan_pub_en = false, dense_pub_en = false, scan_body_pub_en = false;
@@ -544,7 +545,26 @@ void publish_frame_world(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::Share
             string all_points_dir(string(string(ROOT_DIR) + "PCD/scans_") + to_string(pcd_index) + string(".pcd"));
             pcl::PCDWriter pcd_writer;
             cout << "current scan saved to /PCD/" << all_points_dir << endl;
-            pcd_writer.writeBinary(all_points_dir, *pcl_wait_save);
+            
+            // 如果设置了leaf_size，进行体素滤波降采样
+            if (pcd_save_leaf_size > 0.0)
+            {
+                PointCloudXYZI::Ptr pcl_filtered(new PointCloudXYZI());
+                pcl::VoxelGrid<PointType> voxel_filter;
+                voxel_filter.setLeafSize(pcd_save_leaf_size, pcd_save_leaf_size, pcd_save_leaf_size);
+                voxel_filter.setInputCloud(pcl_wait_save);
+                voxel_filter.filter(*pcl_filtered);
+                
+                cout << "Voxel filtered: " << pcl_wait_save->size() << " -> " << pcl_filtered->size() 
+                     << " points (leaf_size=" << pcd_save_leaf_size << ")" << endl;
+                
+                pcd_writer.writeBinary(all_points_dir, *pcl_filtered);
+            }
+            else
+            {
+                pcd_writer.writeBinary(all_points_dir, *pcl_wait_save);
+            }
+            
             pcl_wait_save->clear();
             scan_wait_num = 0;
         }
@@ -617,7 +637,25 @@ void publish_map(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub
 void save_to_pcd()
 {
     pcl::PCDWriter pcd_writer;
-    pcd_writer.writeBinary(map_file_path, *pcl_wait_pub);
+    
+    // 如果设置了leaf_size，进行体素滤波降采样
+    if (pcd_save_leaf_size > 0.0)
+    {
+        PointCloudXYZI::Ptr pcl_filtered(new PointCloudXYZI());
+        pcl::VoxelGrid<PointType> voxel_filter;
+        voxel_filter.setLeafSize(pcd_save_leaf_size, pcd_save_leaf_size, pcd_save_leaf_size);
+        voxel_filter.setInputCloud(pcl_wait_pub);
+        voxel_filter.filter(*pcl_filtered);
+        
+        RCLCPP_INFO(rclcpp::get_logger("laserMapping"), "Voxel filtered: %ld -> %ld points (leaf_size=%.2f)", 
+                    pcl_wait_pub->size(), pcl_filtered->size(), pcd_save_leaf_size);
+        
+        pcd_writer.writeBinary(map_file_path, *pcl_filtered);
+    }
+    else
+    {
+        pcd_writer.writeBinary(map_file_path, *pcl_wait_pub);
+    }
 }
 
 template<typename T>
@@ -841,6 +879,7 @@ public:
         this->declare_parameter<bool>("mapping.extrinsic_est_en", true);
         this->declare_parameter<bool>("pcd_save.pcd_save_en", false);
         this->declare_parameter<int>("pcd_save.interval", -1);
+        this->declare_parameter<double>("pcd_save.leaf_size", 0.0);
         this->declare_parameter<vector<double>>("mapping.extrinsic_T", vector<double>());
         this->declare_parameter<vector<double>>("mapping.extrinsic_R", vector<double>());
 
@@ -877,6 +916,7 @@ public:
         this->get_parameter_or<bool>("mapping.extrinsic_est_en", extrinsic_est_en, true);
         this->get_parameter_or<bool>("pcd_save.pcd_save_en", pcd_save_en, false);
         this->get_parameter_or<int>("pcd_save.interval", pcd_save_interval, -1);
+        this->get_parameter_or<double>("pcd_save.leaf_size", pcd_save_leaf_size, 0.0);
         this->get_parameter_or<vector<double>>("mapping.extrinsic_T", extrinT, vector<double>());
         this->get_parameter_or<vector<double>>("mapping.extrinsic_R", extrinR, vector<double>());
 
@@ -1183,7 +1223,25 @@ int main(int argc, char** argv)
         string all_points_dir(string(string(ROOT_DIR) + "PCD/") + file_name);
         pcl::PCDWriter pcd_writer;
         cout << "current scan saved to /PCD/" << file_name<<endl;
-        pcd_writer.writeBinary(all_points_dir, *pcl_wait_save);
+        
+        // 如果设置了leaf_size，进行体素滤波降采样
+        if (pcd_save_leaf_size > 0.0)
+        {
+            PointCloudXYZI::Ptr pcl_filtered(new PointCloudXYZI());
+            pcl::VoxelGrid<PointType> voxel_filter;
+            voxel_filter.setLeafSize(pcd_save_leaf_size, pcd_save_leaf_size, pcd_save_leaf_size);
+            voxel_filter.setInputCloud(pcl_wait_save);
+            voxel_filter.filter(*pcl_filtered);
+            
+            cout << "Voxel filtered: " << pcl_wait_save->size() << " -> " << pcl_filtered->size() 
+                 << " points (leaf_size=" << pcd_save_leaf_size << ")" << endl;
+            
+            pcd_writer.writeBinary(all_points_dir, *pcl_filtered);
+        }
+        else
+        {
+            pcd_writer.writeBinary(all_points_dir, *pcl_wait_save);
+        }
     }
 
     if (runtime_pos_log)

@@ -208,11 +208,4 @@ private:
   
   int group_size;
   double disA, disB, inf_bound;
-  double limit_maxmid, limit_midmin, limit_maxmin;
-  double p2l_ratio;
-  double jump_up_limit, jump_down_limit;
-  double cos160;
-  double edgea, edgeb;
-  double smallp_intersect, smallp_ratio;
-  double vx, vy, vz;
-};
+  doubl

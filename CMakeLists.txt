@@ -117,12 +117,4 @@ ament_target_dependencies(fastlio_mapping ${dependencies})
 
 # ---------------- Install --------------- #
 install(TARGETS fastlio_mapping
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-  DIRECTORY config launch rviz
-  DESTINATION share/${PROJECT_NAME}
-)
-
-ament_package()
+  DESTINATION
