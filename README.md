@@ -48,7 +48,7 @@ Launch fastlio2.
 ```bash
 cd <ros1_ws>
 source devel/setup.bash # use setup.zsh if use zsh
-roslaunch fast_lio mapping_zvision_nz1.launch # depend on yourself lidar model: roslaunch fast_lio mapping_zvision_nz*(1/3/5/5_mt).launch.py 
+roslaunch fast_lio mapping_zvision_nz1.launch # depend on yourself lidar model: roslaunch fast_lio mapping_zvision_*(nz1/nz3/nz5/nz5_mt/mrz16).launch 
 ```
 
 

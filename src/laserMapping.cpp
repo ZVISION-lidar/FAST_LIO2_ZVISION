@@ -58,6 +58,7 @@
 #include <geometry_msgs/Vector3.h>
 #include "livox_ros_driver/CustomMsg.h"
 #include "preprocess.h"
+#include <std_srvs/Trigger.h>
 #include <ikd-Tree/ikd_Tree.h>
 
 #define INIT_TIME           (0.1)
@@ -91,6 +92,8 @@ double filter_size_corner_min = 0, filter_size_surf_min = 0, filter_size_map_min
 double cube_len = 0, HALF_FOV_COS = 0, FOV_DEG = 0, total_distance = 0, lidar_end_time = 0, first_lidar_time = 0.0;
 int    effct_feat_num = 0, time_log_counter = 0, scan_count = 0, publish_count = 0;
 int    iterCount = 0, feats_down_size = 0, NUM_MAX_ITERATIONS = 0, laserCloudValidNum = 0, pcd_save_interval = -1, pcd_index = 0;
+double pcd_save_leaf_size = 0.0;
+bool   pcd_save_requested = false;
 bool   point_selected_surf[100000] = {0};
 bool   lidar_pushed, flg_first_scan = true, flg_exit = false, flg_EKF_inited;
 bool   scan_pub_en = false, dense_pub_en = false, scan_body_pub_en = false;
@@ -522,7 +525,26 @@ void publish_frame_world(const ros::Publisher & pubLaserCloudFull)
             string all_points_dir(string(string(ROOT_DIR) + "PCD/scans_") + to_string(pcd_index) + string(".pcd"));
             pcl::PCDWriter pcd_writer;
             cout << "current scan saved to /PCD/" << all_points_dir << endl;
-            pcd_writer.writeBinary(all_points_dir, *pcl_wait_save);
+            
+            // 如果设置了leaf_size，进行体素滤波降采样
+            if (pcd_save_leaf_size > 0.0)
+            {
+                PointCloudXYZI::Ptr pcl_filtered(new PointCloudXYZI());
+                pcl::VoxelGrid<PointType> voxel_filter;
+                voxel_filter.setLeafSize(pcd_save_leaf_size, pcd_save_leaf_size, pcd_save_leaf_size);
+                voxel_filter.setInputCloud(pcl_wait_save);
+                voxel_filter.filter(*pcl_filtered);
+                
+                cout << "Voxel filtered: " << pcl_wait_save->size() << " -> " << pcl_filtered->size() 
+                     << " points (leaf_size=" << pcd_save_leaf_size << ")" << endl;
+                
+                pcd_writer.writeBinary(all_points_dir, *pcl_filtered);
+            }
+            else
+            {
+                pcd_writer.writeBinary(all_points_dir, *pcl_wait_save);
+            }
+            
             pcl_wait_save->clear();
             scan_wait_num = 0;
         }
@@ -571,6 +593,52 @@ void publish_map(const ros::Publisher & pubLaserCloudMap)
     laserCloudMap.header.stamp = ros::Time().fromSec(lidar_end_time);
     laserCloudMap.header.frame_id = "camera_init";
     pubLaserCloudMap.publish(laserCloudMap);
+}
+
+// 手动保存点云回调函数
+void save_pcd_callback(const std::string &file_path)
+{
+    if (pcl_wait_save->size() > 0 && pcd_save_en)
+    {
+        pcl::PCDWriter pcd_writer;
+        cout << "Manual save to: " << file_path << endl;
+        
+        // 如果设置了leaf_size，进行体素滤波降采样
+        if (pcd_save_leaf_size > 0.0)
+        {
+            PointCloudXYZI::Ptr pcl_filtered(new PointCloudXYZI());
+            pcl::VoxelGrid<PointType> voxel_filter;
+            voxel_filter.setLeafSize(pcd_save_leaf_size, pcd_save_leaf_size, pcd_save_leaf_size);
+            voxel_filter.setInputCloud(pcl_wait_save);
+            voxel_filter.filter(*pcl_filtered);
+            
+            cout << "Voxel filtered: " << pcl_wait_save->size() << " -> " << pcl_filtered->size() 
+                 << " points (leaf_size=" << pcd_save_leaf_size << ")" << endl;
+            
+            pcd_writer.writeBinary(file_path, *pcl_filtered);
+        }
+        else
+        {
+            pcd_writer.writeBinary(file_path, *pcl_wait_save);
+        }
+        
+        cout << "Map saved successfully!" << endl;
+    }
+    else
+    {
+        cout << "No map data to save or pcd_save_en is disabled." << endl;
+    }
+}
+
+// ROS1 服务回调函数
+bool map_save_service_callback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
+{
+    string map_file_path = root_dir + "/PCD/map.pcd";
+    ROS_INFO("Saving map to %s...", map_file_path.c_str());
+    save_pcd_callback(map_file_path);
+    res.success = true;
+    res.message = "Map saved to " + map_file_path;
+    return true;
 }
 
 template<typename T>
@@ -789,6 +857,7 @@ int main(int argc, char** argv)
     nh.param<bool>("mapping/extrinsic_est_en", extrinsic_est_en, true);
     nh.param<bool>("pcd_save/pcd_save_en", pcd_save_en, false);
     nh.param<int>("pcd_save/interval", pcd_save_interval, -1);
+    nh.param<double>("pcd_save/leaf_size", pcd_save_leaf_size, 0.0);
     nh.param<vector<double>>("mapping/extrinsic_T", extrinT, vector<double>());
     nh.param<vector<double>>("mapping/extrinsic_R", extrinR, vector<double>());
 
@@ -858,6 +927,10 @@ int main(int argc, char** argv)
             ("/Odometry", 100000);
     ros::Publisher pubPath          = nh.advertise<nav_msgs::Path> 
             ("/path", 100000);
+            
+    // 手动保存地图服务
+    ros::ServiceServer map_save_srv = nh.advertiseService("map_save", map_save_service_callback);
+    ROS_INFO("Map save service available at: /map_save");
 //------------------------------------------------------------------------------------------------------
     signal(SIGINT, SigHandle);
     ros::Rate rate(5000);
@@ -1027,7 +1100,25 @@ int main(int argc, char** argv)
         string all_points_dir(string(string(ROOT_DIR) + "PCD/") + file_name);
         pcl::PCDWriter pcd_writer;
         cout << "current scan saved to /PCD/" << file_name<<endl;
-        pcd_writer.writeBinary(all_points_dir, *pcl_wait_save);
+        
+        // 如果设置了leaf_size，进行体素滤波降采样
+        if (pcd_save_leaf_size > 0.0)
+        {
+            PointCloudXYZI::Ptr pcl_filtered(new PointCloudXYZI());
+            pcl::VoxelGrid<PointType> voxel_filter;
+            voxel_filter.setLeafSize(pcd_save_leaf_size, pcd_save_leaf_size, pcd_save_leaf_size);
+            voxel_filter.setInputCloud(pcl_wait_save);
+            voxel_filter.filter(*pcl_filtered);
+            
+            cout << "Voxel filtered: " << pcl_wait_save->size() << " -> " << pcl_filtered->size() 
+                 << " points (leaf_size=" << pcd_save_leaf_size << ")" << endl;
+            
+            pcd_writer.writeBinary(all_points_dir, *pcl_filtered);
+        }
+        else
+        {
+            pcd_writer.writeBinary(all_points_dir, *pcl_wait_save);
+        }
     }
 
     fout_out.close();
@@ -1053,3 +1144,4 @@ int main(int argc, char** argv)
 
     return 0;
 }
+

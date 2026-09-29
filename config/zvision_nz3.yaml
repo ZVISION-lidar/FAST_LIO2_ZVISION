@@ -8,14 +8,13 @@ common:
     time_offset_lidar_to_imu: 0.0
 
 
-max_iteration: 7
+max_iteration: 5
 point_filter_num: 4
 filter_size_corner: 0.5
 filter_size_surf: 0.5
 filter_size_map: 0.5
 
 runtime_pos_log_enable: false
-
 feature_extract_enable: false
 
 
@@ -39,17 +38,11 @@ mapping:
     det_range: 70.0
     extrinsic_est_en: false
 
-    # ZVISION NZ3 extrinsic parameters (adjust for your setup)
-    extrinsic_T: [ -0.0026, -0.06545, 0.0161 ]
+    # ZVISION NZ3 extrinsic parameters 
+    extrinsic_T: [ 0.0026, 0.06545, -0.0161 ]
     extrinsic_R: [ 1.,  0.,  0.,
                    0.,  1., 0.,
                    0., 0.,  1.]
-
-
-    # extrinsic_T: [ -0.0026, -0.06545, 0.0161 ]
-    # extrinsic_R: [ -1.,  0.,  0.,
-    #                0.,  0., -1.,
-    #                0., -1.,  0.]
 
 
 publish:
@@ -61,6 +54,7 @@ publish:
 
 pcd_save:
     pcd_save_en: true
-    interval: -1
+    interval: -1                # -1: all frames in one pcd; >0: split every N frames
+    leaf_size: 1.0             # voxel filter leaf size (0.0 = no filtering)
 
 

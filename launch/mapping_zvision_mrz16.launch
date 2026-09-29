@@ -1,0 +1,16 @@
+<launch>
+<!-- Launch file for ZVISION LiDAR -->
+
+    <arg name="rviz" default="true" />
+
+    <rosparam command="load" file="$(find fast_lio)/config/zvision_mrz16.yaml" />
+
+    <param name="feature_extract_enable" type="bool" value="0"/>
+
+    <node pkg="fast_lio" type="fastlio_mapping" name="laserMapping" output="screen" />
+
+    <group if="$(arg rviz)">
+    <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz_fastlio2" args="-d $(find fast_lio)/rviz_cfg/loam_livox.rviz" />
+    </group>
+
+</launch>

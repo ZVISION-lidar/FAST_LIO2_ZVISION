@@ -507,8 +507,27 @@ void Preprocess::zvision_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     return;
   }
 
-  // Header stamp = first point's timestamp in seconds (from driver)
-  double frame_start_us = msg->header.stamp.toSec() * 1e6;
+  // Find the minimum valid point timestamp as frame start
+  // (avoids relying on point order or header stamp)
+  double frame_start_s = std::numeric_limits<double>::infinity();
+  if (t_off >= 0)
+  {
+    for (int pid = 0; pid < plsize; ++pid)
+    {
+      const uint8_t* ptr = msg->data.data() + pid * msg->point_step;
+      const double pt_time_s = *(const double*)(ptr + t_off);
+
+      if (!std::isfinite(pt_time_s))
+        continue;
+
+      frame_start_s = std::min(frame_start_s, pt_time_s);
+    }
+
+    if (!std::isfinite(frame_start_s))
+    {
+      frame_start_s = msg->header.stamp.toSec();
+    }
+  }
 
   pl_surf.reserve(plsize);
 
@@ -528,12 +547,12 @@ void Preprocess::zvision_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     double offset_s;
     if (t_off >= 0)
     {
-      double pt_time_us = *(const double*)(ptr + t_off) * 1e6;
-      double offset_us = pt_time_us - frame_start_us;
-      offset_s = offset_us * 1e-6;
+      const double pt_time_s = *(const double*)(ptr + t_off);
+      offset_s = pt_time_s - frame_start_s;
     }
     else
     {
+      // Fallback: estimate from point index
       offset_s = static_cast<double>(pid) / plsize * (1.0 / SCAN_RATE);
     }
     added_pt.curvature = static_cast<float>(offset_s * 1000.0);  // ms
