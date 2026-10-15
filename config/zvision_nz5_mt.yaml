@@ -7,7 +7,7 @@
         filter_size_map: 0.5
         cube_side_length: 1000.0
         runtime_pos_log_enable: false
-        map_file_path: "./map.pcd"
+        map_file_path: "PCD/map.pcd"
 
         common:
             lid_topic:  "/zvlidar_points_xyzirt"
@@ -23,7 +23,7 @@
             blind: 0.3
 
         mapping:
-            acc_cov: 0.5             # 
+            acc_cov: 0.3             # 
             gyr_cov: 0.01
             b_acc_cov: 0.001
             b_gyr_cov: 0.001
@@ -45,5 +45,6 @@
             scan_bodyframe_pub_en: true
 
         pcd_save:
-            pcd_save_en: false
+            pcd_save_en: true
             interval: -1
+            leaf_size: 0.2  # 体素滤波尺寸(米)，0表示不滤波，值越大地图点越稀疏

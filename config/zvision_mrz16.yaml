@@ -11,31 +11,31 @@
 
         common:
             lid_topic:  "/zvlidar_points_xyzirt"
-            imu_topic:  "/zvlidar_imu_msg"       
+            imu_topic:  "/zvlidar_imu_msg"         
             time_sync_en: false
             time_offset_lidar_to_imu: 0.0
 
         preprocess:
             lidar_type: 5
-            scan_line: 16            #
-            scan_rate: 10
+            scan_line: 16            # 16线
+            scan_rate: 5
             timestamp_unit: 2
-            blind: 0.3
+            blind: 2.0
 
         mapping:
-            acc_cov: 0.1             # 
+            acc_cov: 0.3             # 
             gyr_cov: 0.01
             b_acc_cov: 0.001
             b_gyr_cov: 0.001
             fov_degree: 360.0
             det_range: 70.0
-            extrinsic_est_en: false
+            extrinsic_est_en: true
 
             # 外参
             extrinsic_T: [ 0.00358, 0.02257, 0.03686 ]
             extrinsic_R: [ 1.,  0.,  0.,
-                           0.,  1., 0.,
-                           0., 0.,  1.]
+                        0.,  1., 0.,
+                        0., 0.,  1.]
 
 
         publish:
@@ -47,3 +47,4 @@
         pcd_save:
             pcd_save_en: true
             interval: -1
+            leaf_size: 0.2  # 体素滤波尺寸(米)，0表示不滤波，值越大地图点越稀疏

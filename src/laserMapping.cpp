@@ -94,7 +94,7 @@ double filter_size_corner_min = 0, filter_size_surf_min = 0, filter_size_map_min
 double cube_len = 0, HALF_FOV_COS = 0, FOV_DEG = 0, total_distance = 0, lidar_end_time = 0, first_lidar_time = 0.0;
 int    effct_feat_num = 0, time_log_counter = 0, scan_count = 0, publish_count = 0;
 int    iterCount = 0, feats_down_size = 0, NUM_MAX_ITERATIONS = 0, laserCloudValidNum = 0, pcd_save_interval = -1, pcd_index = 0;
-float pcd_save_leaf_size = 0.0;  // 体素滤波尺寸(米)，0表示不滤波
+double pcd_save_leaf_size = 0.0;  // 体素滤波尺寸(米)，0表示不滤波
 bool   point_selected_surf[100000] = {0};
 bool   lidar_pushed, flg_first_scan = true, flg_exit = false, flg_EKF_inited;
 bool   scan_pub_en = false, dense_pub_en = false, scan_body_pub_en = false;
@@ -636,6 +636,12 @@ void publish_map(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub
 
 void save_to_pcd()
 {
+    if (pcl_wait_save->empty())
+    {
+        RCLCPP_WARN(rclcpp::get_logger("laserMapping"), "No map data to save.");
+        return;
+    }
+    
     pcl::PCDWriter pcd_writer;
     
     // 如果设置了leaf_size，进行体素滤波降采样
@@ -644,17 +650,17 @@ void save_to_pcd()
         PointCloudXYZI::Ptr pcl_filtered(new PointCloudXYZI());
         pcl::VoxelGrid<PointType> voxel_filter;
         voxel_filter.setLeafSize(pcd_save_leaf_size, pcd_save_leaf_size, pcd_save_leaf_size);
-        voxel_filter.setInputCloud(pcl_wait_pub);
+        voxel_filter.setInputCloud(pcl_wait_save);
         voxel_filter.filter(*pcl_filtered);
         
         RCLCPP_INFO(rclcpp::get_logger("laserMapping"), "Voxel filtered: %ld -> %ld points (leaf_size=%.2f)", 
-                    pcl_wait_pub->size(), pcl_filtered->size(), pcd_save_leaf_size);
+                    pcl_wait_save->size(), pcl_filtered->size(), pcd_save_leaf_size);
         
         pcd_writer.writeBinary(map_file_path, *pcl_filtered);
     }
     else
     {
-        pcd_writer.writeBinary(map_file_path, *pcl_wait_pub);
+        pcd_writer.writeBinary(map_file_path, *pcl_wait_save);
     }
 }
 

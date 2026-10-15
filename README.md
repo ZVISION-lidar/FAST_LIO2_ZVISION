@@ -32,7 +32,7 @@ Clone the repository and colcon build:
 
 ```bash
     cd <ros2_ws>/src # cd into a ros2 workspace folder
-    git clone https://github.com/ZVISION-lidar/FAST_LIO2_ZVISION.git
+    git clone https://github.com/ZVISION-lidar/FAST_LIO_ZVISION.git
     cd ..
     colcon build 
 ```
@@ -61,4 +61,7 @@ ros2 launch fast_lio mapping_zvision_nz1.launch.py # depend on yourself lidar mo
 
 ### 3.2 PCD file save
 
-Enable `pcd_save.pcd_save_en` in the config file and set the `map_file_path` to the path where the map will be saved
+Enable `pcd_save.pcd_save_en` in the config file and set the `map_file_path` to the path where the map will be saved.
+
+```pcl_viewer scans.pcd``` can visualize the point clouds.
+

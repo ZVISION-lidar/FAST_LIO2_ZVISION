@@ -1,10 +1,10 @@
 /**:
     ros__parameters:
         feature_extract_enable: false
-        point_filter_num: 1
-        max_iteration: 7
-        filter_size_surf: 0.1
-        filter_size_map: 0.1
+        point_filter_num: 3
+        max_iteration: 5
+        filter_size_surf: 0.2
+        filter_size_map: 0.2
         cube_side_length: 1000.0
         runtime_pos_log_enable: false
         map_file_path: "./map.pcd"
@@ -23,8 +23,8 @@
             blind: 0.3
 
         mapping:
-            acc_cov: 0.1             # 
-            gyr_cov: 0.01
+            acc_cov: 0.3             # 
+            gyr_cov: 0.1
             b_acc_cov: 0.001
             b_gyr_cov: 0.001
             fov_degree: 240.0
