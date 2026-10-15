@@ -513,18 +513,19 @@ void Preprocess::zvision_handler(const sensor_msgs::msg::PointCloud2::UniquePtr 
     for (int pid = 0; pid < plsize; ++pid)
     {
       const uint8_t* ptr = msg->data.data() + pid * msg->point_step;
-      const double x = *(const float*)(ptr + x_off);
-      const double y = *(const float*)(ptr + y_off);
-      const double z = *(const float*)(ptr + z_off);
-      if (x * x + y * y + z * z <= (blind * blind))
+      const double pt_time_s = *(const double*)(ptr + t_off);
+
+      if (!std::isfinite(pt_time_s))
         continue;
 
-      const double pt_time_s = *(const double*)(ptr + t_off);
       frame_start_s = std::min(frame_start_s, pt_time_s);
     }
 
     if (!std::isfinite(frame_start_s))
     {
+
+      RCLCPP_WARN(rclcpp::get_logger("preprocess"),
+                "ZVISION: no valid timestamp, fallback to header.stamp");
       frame_start_s = rclcpp::Time(msg->header.stamp).seconds();
     }
   }

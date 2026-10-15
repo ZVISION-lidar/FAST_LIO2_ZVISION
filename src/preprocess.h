@@ -151,25 +151,28 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(livox_ros::LivoxPointXyzitl,
     (uint8_t, line, line)
 )
 
+
 namespace zvision_ros
 {
 struct EIGEN_ALIGN16 Point
 {
-  PCL_ADD_POINT4D;
-  float intensity;
-  uint8_t ring;
-  double timestamp;
+  PCL_ADD_POINT4D;          // x, y, z, padding → offset 0~15
+  uint8_t intensity;        // offset 16
+  uint16_t ring;            // offset 18
+  double timestamp;         // offset 24
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 }  // namespace zvision_ros
+
 POINT_CLOUD_REGISTER_POINT_STRUCT(zvision_ros::Point,
     (float, x, x)
     (float, y, y)
     (float, z, z)
-    (float, intensity, intensity)
-    (uint8_t, ring, ring)
+    (uint8_t, intensity, intensity)
+    (uint16_t, ring, ring)
     (double, timestamp, timestamp)
 )
+
 
 class Preprocess
 {

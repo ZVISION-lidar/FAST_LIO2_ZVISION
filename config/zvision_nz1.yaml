@@ -1,10 +1,10 @@
 /**:
     ros__parameters:
         feature_extract_enable: false
-        point_filter_num: 4
+        point_filter_num: 1
         max_iteration: 7
-        filter_size_surf: 0.5
-        filter_size_map: 0.5
+        filter_size_surf: 0.1
+        filter_size_map: 0.1
         cube_side_length: 1000.0
         runtime_pos_log_enable: false
         map_file_path: "./map.pcd"
@@ -32,7 +32,7 @@
             extrinsic_est_en: false
 
             # 外参
-            extrinsic_T: [ -0.0026, -0.05527, -0.0193 ]
+            extrinsic_T: [ 0.0026, 0.05527, -0.0193 ]
             extrinsic_R: [ 1.,  0.,  0.,
                            0.,  1., 0.,
                            0., 0.,  1.]
