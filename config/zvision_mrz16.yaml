@@ -26,7 +26,7 @@ map_file_path: "./map.pcd"
 preprocess:
     lidar_type: 5          # ZVISION = 5
     scan_line: 16         # 16 lines depending on model
-    scan_rate: 5
+    scan_rate: 10
     timestamp_unit: 2      # US (microseconds)
     blind: 2.0             # Minimum distance filter
 
