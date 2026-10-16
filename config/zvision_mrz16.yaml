@@ -18,9 +18,9 @@
         preprocess:
             lidar_type: 5
             scan_line: 16            # 16线
-            scan_rate: 5
+            scan_rate: 10
             timestamp_unit: 2
-            blind: 2.0
+            blind: 0.3             # SLAM 点云盲区
 
         mapping:
             acc_cov: 0.3             # 
@@ -34,8 +34,8 @@
             # 外参
             extrinsic_T: [ 0.00358, 0.02257, 0.03686 ]
             extrinsic_R: [ 1.,  0.,  0.,
-                        0.,  1., 0.,
-                        0., 0.,  1.]
+                           0.,  1., 0.,
+                           0., 0.,  1.]
 
 
         publish:

@@ -32,7 +32,7 @@
             extrinsic_est_en: false
 
             # 外参
-            extrinsic_T: [ -0.0026, -0.06545, -0.0161 ]
+            extrinsic_T: [ 0.0026, 0.06545, -0.0161 ]
             extrinsic_R: [ 1.,  0.,  0.,
                            0.,  1., 0.,
                            0., 0.,  1.]
@@ -47,3 +47,4 @@
         pcd_save:
             pcd_save_en: true
             interval: -1
+            leaf_size: 0.2  # 体素滤波尺寸(米)，0表示不滤波，值越大地图点越稀疏
