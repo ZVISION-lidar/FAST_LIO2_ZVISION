@@ -29,7 +29,7 @@
             b_gyr_cov: 0.001
             fov_degree: 360.0
             det_range: 70.0
-            extrinsic_est_en: true
+            extrinsic_est_en: false
 
             # 外参
             extrinsic_T: [ 0.00358, 0.02257, 0.03686 ]
