@@ -40,7 +40,7 @@ mapping:
     extrinsic_est_en: false
 
     # ZVISION NZ1 extrinsic parameters (adjust for your setup)
-    extrinsic_T: [ 0.0026, 0.05527, -0.0193 ]
+    extrinsic_T: [ 0.0026, 0.0553, 0.0077 ]
     extrinsic_R: [ 1.,  0.,  0.,
                    0.,  1., 0.,
                    0., 0.,  1.]
