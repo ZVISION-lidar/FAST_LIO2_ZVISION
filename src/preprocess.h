@@ -4,6 +4,9 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include "livox_ros_driver2/msg/custom_msg.hpp"
 
+#include <algorithm>  // std::sort
+#include <limits>    // std::numeric_limits
+
 using namespace std;
 
 #define IS_VALID(a) ((abs(a) > 1e8) ? true : false)
@@ -194,7 +197,20 @@ class Preprocess
   int lidar_type, point_filter_num, N_SCANS, SCAN_RATE, time_unit;
   double blind;
   bool feature_enabled, given_offset_time;
-  // ros::Publisher pub_full, pub_surf, pub_corn;
+
+  // ============================================================
+  // [统一时间原点] 本帧所有点的【绝对时间戳】范围(秒).
+  //   frame_start_s_ : 全量原始点的最小绝对时间戳
+  //   frame_end_s_   : 全量原始点的最大绝对时间戳
+  // 要求:
+  //   1) 对【全量原始点】统计, 不能只统计通过 blind 过滤的存活点,
+  //      否则近处点被滤掉后 frame_end_s_ 偏小 -> 帧末时间提前 -> IMU 少积分.
+  //   2) 取 min/max 而不是 front()/back(), 因为 SDK 可能打乱点序.
+  //   3) 不使用 header.stamp 作为原点, 它与点的实际时间戳可能有常数偏差.
+  // lidar_beg_time / lidar_end_time 直接取这两个值, 剥离 header.stamp.
+  // ============================================================
+  double frame_start_s_ = 0.0;
+  double frame_end_s_ = 0.0;
 
 private:
   void avia_handler(const livox_ros_driver2::msg::CustomMsg::UniquePtr &msg);

@@ -52,6 +52,11 @@ void Preprocess::process(const livox_ros_driver2::msg::CustomMsg::UniquePtr &msg
 
 void Preprocess::process(const sensor_msgs::msg::PointCloud2::UniquePtr &msg, PointCloudXYZI::Ptr& pcl_out)
 {
+  // [统一时间原点] 先用 header.stamp 兜底, 下面的统计若失败(无时间戳字段等)
+  // 就保持这个值, 避免残留上一帧的 frame_start_s_/frame_end_s_.
+  frame_start_s_ = rclcpp::Time(msg->header.stamp).seconds();
+  frame_end_s_   = frame_start_s_;
+
   switch (time_unit)
   {
     case SEC:
@@ -506,8 +511,20 @@ void Preprocess::zvision_handler(const sensor_msgs::msg::PointCloud2::UniquePtr 
   }
 
   // Driver packs timestamp_us as float64 = timestamp_us * 1e-6 (seconds)
-  // Use the minimum valid point timestamp as frame start to avoid relying on point order.
+  //
+  // [统一时间原点] 点的 curvature 以【本帧最小点时间戳】为原点:
+  //   curvature = 点绝对时间戳 - frame_start_s
+  // 这样:
+  //   - 点的绝对时间 = frame_start_s + curvature  (同源, 去畸变 dt 无常数偏置)
+  //   - curvature >= 0, 与 IMU 的 offset_time 同源
+  // 注意: 不能用 header.stamp 当原点 —— 它与点的实际时间戳可能有常数偏差,
+  //       快速旋转时相当于给整帧点云施加了一个固定角度的系统误差.
+  // 同时不能用"本帧最大点时间戳"当原点, 否则 IMU offset_time 会整体为负.
+  //
+  // [统一时间原点] 同时统计本帧最大点时间戳, 供 laserMapping 计算
+  // lidar_end_time (剥离 header.stamp).
   double frame_start_s = std::numeric_limits<double>::infinity();
+  double frame_end_s   = -std::numeric_limits<double>::infinity();
   if (t_off >= 0)
   {
     for (int pid = 0; pid < plsize; ++pid)
@@ -519,16 +536,28 @@ void Preprocess::zvision_handler(const sensor_msgs::msg::PointCloud2::UniquePtr 
         continue;
 
       frame_start_s = std::min(frame_start_s, pt_time_s);
+      frame_end_s   = std::max(frame_end_s,   pt_time_s);
     }
 
     if (!std::isfinite(frame_start_s))
     {
-
       RCLCPP_WARN(rclcpp::get_logger("preprocess"),
                 "ZVISION: no valid timestamp, fallback to header.stamp");
       frame_start_s = rclcpp::Time(msg->header.stamp).seconds();
+      frame_end_s   = frame_start_s;
     }
   }
+  else
+  {
+    // Fallback: 没有时间戳字段时, 用 header.stamp 近似帧起点
+    frame_start_s = rclcpp::Time(msg->header.stamp).seconds();
+    frame_end_s   = frame_start_s;
+  }
+
+  // [统一时间原点] 对外暴露帧的真实时间范围, 供 laserMapping 计算
+  // lidar_beg_time / lidar_end_time (剥离 header.stamp).
+  frame_start_s_ = frame_start_s;
+  frame_end_s_   = frame_end_s;
 
   pl_surf.reserve(plsize);
 
@@ -550,6 +579,7 @@ void Preprocess::zvision_handler(const sensor_msgs::msg::PointCloud2::UniquePtr 
     {
       const double pt_time_s = *(const double*)(ptr + t_off);
       offset_s = pt_time_s - frame_start_s;
+      if (!std::isfinite(offset_s)) offset_s = 0.0;
     }
     else
     {
@@ -564,6 +594,17 @@ void Preprocess::zvision_handler(const sensor_msgs::msg::PointCloud2::UniquePtr 
         pl_surf.push_back(added_pt);
     }
   }
+
+  // [排序] 按帧内相对时间排序.
+  // SDK 可能打乱点序, front()/back() 不一定是时间最小/最大的点.
+  // 而下游依赖:
+  //   1) 去畸变是 backward 迭代 (it_pcl = pcl_out.points.end() - 1), 要求末尾是时间最大的点
+  //   2) sort(pcl_out.points..., time_list) 在 UndistortPcl 里还会再排一次, 但那里用的是
+  //      curvature < curvature, 与本处一致
+  std::sort(pl_surf.points.begin(), pl_surf.points.end(),
+            [](const PointType &a, const PointType &b) {
+              return a.curvature < b.curvature;
+            });
 }
 
 void Preprocess::mid360_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg)

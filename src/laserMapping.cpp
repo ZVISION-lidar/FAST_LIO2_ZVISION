@@ -105,7 +105,15 @@ vector<BoxPointType> cub_needrm;
 vector<PointVector>  Nearest_Points; 
 vector<double>       extrinT(3, 0.0);
 vector<double>       extrinR(9, 0.0);
+// [统一时间原点] ZVISION 专用: 每帧点云的真实时间范围(绝对时间戳, 秒).
+//   beg: 全量原始点的最小绝对时间戳
+//   end: 全量原始点的最大绝对时间戳
+// 剥离 header.stamp —— header.stamp 与点实际时间戳可能有常数偏差,
+// 用它当帧起点会让整帧 offset 带上常数偏置(快速旋转时表现为固定角度误差).
+// 仅 ZVISION 使用; 其余雷达类型沿用原有的 time_buffer(header.stamp) 路径.
 deque<double>                     time_buffer;
+deque<double>                     frame_beg_time_buffer;
+deque<double>                     frame_end_time_buffer;
 deque<PointCloudXYZI::Ptr>        lidar_buffer;
 deque<sensor_msgs::msg::Imu::ConstSharedPtr> imu_buffer;
 
@@ -291,6 +299,11 @@ void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::UniquePtr msg)
     {
         std::cerr << "lidar loop back, clear buffer" << std::endl;
         lidar_buffer.clear();
+        // [FIX] 时间 buffer 必须一起清, 否则各 buffer 长度不一致,
+        // time_buffer/front() 与 frame_beg/end_time_buffer.front() 会对应到不同的帧.
+        time_buffer.clear();
+        frame_beg_time_buffer.clear();
+        frame_end_time_buffer.clear();
     }
     if (is_first_lidar)
     {
@@ -300,7 +313,10 @@ void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::UniquePtr msg)
     PointCloudXYZI::Ptr  ptr(new PointCloudXYZI());
     p_pre->process(msg, ptr);
     lidar_buffer.push_back(ptr);
+    // [统一时间原点][仅 ZVISION] 用预处理算出的帧真实时间范围(全量点 min/max), 而非 header.stamp
     time_buffer.push_back(cur_time);
+    frame_beg_time_buffer.push_back(p_pre->frame_start_s_);
+    frame_end_time_buffer.push_back(p_pre->frame_end_s_);
     last_timestamp_lidar = cur_time;
     s_plot11[scan_count] = omp_get_wtime() - preprocess_start_time;
     mtx_buffer.unlock();
@@ -319,6 +335,11 @@ void livox_pcl_cbk(const livox_ros_driver2::msg::CustomMsg::UniquePtr msg)
     {
         std::cerr << "lidar loop back, clear buffer" << std::endl;
         lidar_buffer.clear();
+        // [FIX] 时间 buffer 必须一起清, 否则各 buffer 长度不一致,
+        // time_buffer/front() 与 frame_beg/end_time_buffer.front() 会对应到不同的帧.
+        time_buffer.clear();
+        frame_beg_time_buffer.clear();
+        frame_end_time_buffer.clear();
     }
     if(is_first_lidar)
     {
@@ -341,8 +362,11 @@ void livox_pcl_cbk(const livox_ros_driver2::msg::CustomMsg::UniquePtr msg)
     PointCloudXYZI::Ptr  ptr(new PointCloudXYZI());
     p_pre->process(msg, ptr);
     lidar_buffer.push_back(ptr);
+    // [统一时间原点][仅 ZVISION] 用预处理算出的帧真实时间范围(全量点 min/max), 而非 header.stamp
     time_buffer.push_back(last_timestamp_lidar);
-    
+    frame_beg_time_buffer.push_back(p_pre->frame_start_s_);
+    frame_end_time_buffer.push_back(p_pre->frame_end_s_);
+
     s_plot11[scan_count] = omp_get_wtime() - preprocess_start_time;
     mtx_buffer.unlock();
     sig_buffer.notify_all();
@@ -391,31 +415,71 @@ bool sync_packages(MeasureGroup &meas)
     if(!lidar_pushed)
     {
         meas.lidar = lidar_buffer.front();
-        meas.lidar_beg_time = time_buffer.front();
 
-        double max_curvature_s = 0.0;
-        if (!meas.lidar->points.empty())
+        if (p_pre->lidar_type == ZVISION)
         {
-            for (const auto &pt : meas.lidar->points)
-            {
-                max_curvature_s = std::max(max_curvature_s, pt.curvature / double(1000));
+            // [统一时间原点][仅 ZVISION] 帧起止时间直接取预处理统计的
+            // 【全量点 min/max 绝对时间戳】, 剥离 header.stamp.
+            //   - 取 min/max 而非 front()/back(): SDK 可能打乱点序, 首尾点不一定是时间极值.
+            //   - 取全量点而非存活点: 近处点被 blind 滤掉后, 存活点的 max 会偏小,
+            //     导致帧末时间提前 -> IMU 少积分 -> 位置/速度系统性偏差.
+            double frame_beg = frame_beg_time_buffer.front();
+            double frame_end = frame_end_time_buffer.front();
+
+            if (frame_end < frame_beg) {
+                // 兜底: 时间范围异常时退回 header.stamp
+                frame_beg = frame_end = time_buffer.front();
             }
-        }
 
-        if (meas.lidar->points.size() <= 1) // time too little
-        {
-            lidar_end_time = meas.lidar_beg_time + lidar_mean_scantime;
-            std::cerr << "Too few input point cloud!\n";
-        }
-        else if (max_curvature_s < 0.5 * lidar_mean_scantime)
-        {
-            lidar_end_time = meas.lidar_beg_time + lidar_mean_scantime;
+            meas.lidar_beg_time = frame_beg;
+
+            if (meas.lidar->points.size() <= 1) // time too little
+            {
+                lidar_end_time = frame_beg + lidar_mean_scantime;
+                std::cerr << "Too few input point cloud!\n";
+            }
+            else
+            {
+                // 帧末时间 = 全量点的最大绝对时间戳
+                lidar_end_time = frame_end;
+
+                // 更新平均扫描时长 (用于"点太少"的兜底分支)
+                const double this_scantime = lidar_end_time - frame_beg;
+                if (this_scantime > 0.0) {
+                    scan_num ++;
+                    lidar_mean_scantime += (this_scantime - lidar_mean_scantime) / scan_num;
+                }
+            }
         }
         else
         {
-            scan_num ++;
-            lidar_end_time = meas.lidar_beg_time + max_curvature_s;
-            lidar_mean_scantime += (max_curvature_s - lidar_mean_scantime) / scan_num;
+            // 其余雷达类型: 沿用原有语义 (帧起点 = header.stamp)
+            meas.lidar_beg_time = time_buffer.front();
+
+            double max_curvature_s = 0.0;
+            if (!meas.lidar->points.empty())
+            {
+                for (const auto &pt : meas.lidar->points)
+                {
+                    max_curvature_s = std::max(max_curvature_s, pt.curvature / double(1000));
+                }
+            }
+
+            if (meas.lidar->points.size() <= 1) // time too little
+            {
+                lidar_end_time = meas.lidar_beg_time + lidar_mean_scantime;
+                std::cerr << "Too few input point cloud!\n";
+            }
+            else if (max_curvature_s < 0.5 * lidar_mean_scantime)
+            {
+                lidar_end_time = meas.lidar_beg_time + lidar_mean_scantime;
+            }
+            else
+            {
+                scan_num ++;
+                lidar_end_time = meas.lidar_beg_time + max_curvature_s;
+                lidar_mean_scantime += (max_curvature_s - lidar_mean_scantime) / scan_num;
+            }
         }
 
         meas.lidar_end_time = lidar_end_time;
@@ -441,6 +505,8 @@ bool sync_packages(MeasureGroup &meas)
 
     lidar_buffer.pop_front();
     time_buffer.pop_front();
+    frame_beg_time_buffer.pop_front();
+    frame_end_time_buffer.pop_front();
     lidar_pushed = false;
     return true;
 }

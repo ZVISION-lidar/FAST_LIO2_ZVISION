@@ -1,10 +1,10 @@
 /**:
     ros__parameters:
         feature_extract_enable: false
-        point_filter_num: 3
+        point_filter_num: 4
         max_iteration: 5
-        filter_size_surf: 0.2
-        filter_size_map: 0.2
+        filter_size_surf: 0.1
+        filter_size_map: 0.1
         cube_side_length: 1000.0
         runtime_pos_log_enable: false
         map_file_path: "./map.pcd"
@@ -20,10 +20,10 @@
             scan_line: 96            # 96/192线
             scan_rate: 10
             timestamp_unit: 2
-            blind: 0.3
+            blind: 0.8
 
         mapping:
-            acc_cov: 0.3             # 
+            acc_cov: 0.1             # 
             gyr_cov: 0.1
             b_acc_cov: 0.001
             b_gyr_cov: 0.001

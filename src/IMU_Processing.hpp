@@ -85,6 +85,8 @@ ImuProcess::ImuProcess()
     : b_first_frame_(true), imu_need_init_(true), start_timestamp_(-1)
 {
   init_iter_num = 1;
+  // [FIX] last_lidar_end_time_ 未初始化会在第 0 帧被读取, 导致未定义行为.
+  last_lidar_end_time_ = -1.0;
   Q = process_noise_cov();
   cov_acc       = V3D(0.1, 0.1, 0.1);
   cov_gyr       = V3D(0.1, 0.1, 0.1);
